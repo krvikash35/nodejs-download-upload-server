@@ -1,0 +1,141 @@
+<html>
+<head>
+<style>
+body{
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-content: center;
+  align-items: center;
+}
+#toast {
+    visibility: hidden;
+    background-color: black;
+    min-width: 250px;
+    margin-left: -125px;
+    color: #fff;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    bottom: 30px;
+}
+.toast-visible-error{
+  visibility: visible !important;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  background-color: red !important;
+}
+.toast-visible-success{
+  visibility: visible !important;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  background-color: green !important;
+}
+
+@keyframes fadein {
+    from {bottom: 0; opacity: 0;}
+    to {bottom: 30px; opacity: 1;}
+}
+@keyframes fadeout {
+    from {bottom: 30px; opacity: 1;}
+    to {bottom: 0; opacity: 0;}
+}
+.btn{
+    display: inline-block;
+    min-width: 88px;
+    height: 36px;
+    line-height: 36px;
+    border: none;
+    border-radius: 5px;
+    background-color: orange;
+    text-align: center;
+    text-decoration: none;
+    text-transform: uppercase;
+    padding: 0 10px;
+    color: white;
+    cursor: pointer;
+    transition: opacity 0.25s ease-in-out;
+}
+
+.btn-raised{
+   box-shadow: var(--bs1); 
+}
+
+.hidden{
+  display: none;
+}
+</style>
+
+</head>
+
+<body>
+  <h3> Simple upload and download file server</h3>
+  <!-- <button onClick="uploadFile" class="btn btn-raised">Upload</button> -->
+  <label for="upload" class="btn btn-raised">Upload</label>
+  <input class="hidden" id="upload" type="file" onchange="uploadFile(event)" />
+  <ol id="download"></ol>
+  <div id="toast"></div>
+  <script>
+      var downloadDOM = document.getElementById('download');
+      var toastDOM = document.getElementById('toast');
+      showUploadedFiles();
+
+      function uploadFile(event){
+        console.log('inside uploadFile')
+        let target = event.target || event.srcElement || event.currentTarget;
+        let file = target.files[0];
+        let xhr = new XMLHttpRequest();
+        xhr.open('POST', '/upload/'+file.name, true);
+        xhr.setRequestHeader('Content-Type', 'application/octate-stream');
+        xhr.onreadystatechange = function(){
+          event = null;
+          if(xhr.readyState === 4) {
+            if(xhr.status === 200){
+              showToastMessage(xhr.responseText, 'success');
+              showUploadedFiles();
+            }else{
+              showToastMessage(xhr.responseText, 'error');
+            }
+          }
+        }
+        xhr.send(file);
+        event.target.value = "";
+      }
+      
+      function showUploadedFiles(){
+        let xhr = new XMLHttpRequest();
+        xhr.open('GET', '/list', true);
+        xhr.onreadystatechange = function(){
+          if(xhr.readyState === 4){
+            if(xhr.status === 200){
+              let listOfFile = JSON.parse(xhr.responseText);
+              let listOfFileHTML = ""
+              for(var i=0; i<listOfFile.length; i++){
+                listOfFileHTML = listOfFileHTML + "<li> <a href='/download/" + listOfFile[i] +"'>" + listOfFile[i] + "</a></li>"
+              }
+              downloadDOM.innerHTML = listOfFileHTML;
+            }else{
+      
+            }
+          }
+        }
+        xhr.send();
+      }
+
+      function showToastMessage(msg, type){
+        console.log('inside showtoast mesage', msg, type)
+        toastDOM.innerText = msg;
+        if(type === 'error'){
+          toastDOM.classList.add('toast-visible-error');
+          setTimeout(function() {toastDOM.classList.remove('toast-visible-error')}, 3000);
+        }else{
+          console.log('toastdom', toastDOM)
+          toastDOM.classList.add('toast-visible-success');        
+          setTimeout(function() {toastDOM.classList.remove('toast-visible-success')}, 3000);
+        }
+      }
+  </script>
+</body>
+</html>
+
